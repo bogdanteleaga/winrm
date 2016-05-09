@@ -3,9 +3,8 @@ package winrm
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
-
-	"launchpad.net/gwacl/fork/http"
 
 	"github.com/masterzen/winrm/soap"
 )

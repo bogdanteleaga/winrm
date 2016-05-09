@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"launchpad.net/gwacl/fork/http"
-	"launchpad.net/gwacl/fork/tls"
+	"crypto/tls"
+	"net/http"
 
 	"github.com/masterzen/winrm/soap"
 )
@@ -62,6 +62,25 @@ func NewClientWithParameters(endpoint *Endpoint, user, password string, params *
 	return
 }
 
+// NewClientWithCertificate will create a new remote client on url, connecting
+// with certificates. It currently needs a custom transport to be passed in as
+// well as a HttpDoer interface. See examples.
+// This function doesn't connect (connection happens only when CreateShell is called)
+func NewClientWithCertificate(endpoint *Endpoint, params *Parameters, h HttpPost) (client *Client, err error) {
+
+	if isSetCertAndPrivateKey(endpoint.Cert, endpoint.Key) && endpoint.HTTPS == false {
+		return nil, fmt.Errorf("Invalid protocol for this transport type (CertAuth). Expected https")
+	}
+
+	client = &Client{
+		Parameters: *params,
+		url:        endpoint.url(),
+		http:       h,
+		useHTTPS:   endpoint.HTTPS,
+	}
+	return
+}
+
 // newTransport will create a new HTTP Transport, with options specified within the endpoint configuration
 func newTransport(endpoint *Endpoint) (*http.Transport, error) {
 	transport := &http.Transport{
@@ -107,6 +126,10 @@ func readCACerts(certs *[]byte) (*x509.CertPool, error) {
 	}
 
 	return certPool, nil
+}
+
+func (client *Client) URL() string {
+	return client.url
 }
 
 // CreateShell will create a WinRM Shell, which is the prealable for running
